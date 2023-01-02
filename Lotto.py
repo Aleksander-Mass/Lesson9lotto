@@ -60,7 +60,7 @@ class Cart:
         """
         return len(self.get_cart_numbers()) == 0
 
-    def is_num_to_cart(self, num):
+    def __contains__(self, num):
         """
         Проверка присутствия номера в карточке
         :param num: искомый номер
@@ -82,7 +82,7 @@ class Cart:
 
         return False
 
-    def out_print(self):
+    def __str__(self):
         """
         Подготовка карточки для вывода на экран.
         :return: стока для вывода
@@ -95,6 +95,11 @@ class Cart:
             s += '|\n'
         s += ' ' + '-' * 30 + '\n'
         return s
+
+    def __eq__(self, other):
+        if isinstance(other, Cart):
+            return self.get_cart_numbers() == other.get_cart_numbers()
+        return False
 
 
 class PlayerComp:
@@ -115,13 +120,23 @@ class PlayerComp:
         :param num: номер бочонка
         :return: bool
         """
-        print(self.cart.out_print())
-        if self.cart.is_num_to_cart(num):
+        print(self.cart)
+        if num in self.cart:
             self.cart.cross_out(num)
             print('Номер есть')
         else:
             print('Номера нет в карточке')
         return True
+
+    def __str__(self):
+        s = f'Имя игрока: {self.name}\n'
+        s += f'Карточка игрока:\n{self.cart}'
+        return s
+
+    def __eq__(self, other):
+        if isinstance(other, PlayerComp):
+            return self.name == other.name and self.cart == other.cart
+        return False
 
 
 class PlayerHuman:
@@ -134,21 +149,31 @@ class PlayerHuman:
         print(f'Имя игрока: {self.name}')
 
     def step(self, num):
-        print(self.cart.out_print())
+        print(self.cart)
         ans = input('Зачеркнуть цифру (Д/Н)? ')
         while ans not in 'ДдНн':
             ans = input('Некорректный ввод. Зачеркнуть цифру (Д/Н)? ')
         if ans in 'Дд':
-            if self.cart.is_num_to_cart(num):
+            if num in self.cart:
                 self.cart.cross_out(num)
                 return True
             else:
                 return False
         else:
-            if self.cart.is_num_to_cart(num):
+            if num in self.cart:
                 return False
             else:
                 return True
+
+    def __str__(self):
+        s = f'Имя игрока: {self.name}\n'
+        s += f'Карточка игрока:\n{self.cart}'
+        return s
+    
+    def __eq__(self, other):
+        if isinstance(other, PlayerHuman):
+            return self.name == other.name and self.cart == other.cart
+        return False
 
 
 class Game:
@@ -162,6 +187,8 @@ class Game:
         self.bag = list(range(1, 100))
         self.player1 = None
         self.player2 = None
+        self.winner = None
+        self.loser = None
 
     def menu(self):
         """
@@ -211,28 +238,43 @@ class Game:
             print('Выбран выход')
             return False
 
+        step1, step2 = False, False
         number = self.step()
 
         while not (self.player1.cart.is_empty or self.player2.cart.is_empty):
             step1 = self.player1.step(number)
             step2 = self.player2.step(number)
-            if not step1 or not step2:
+            if not (step1 and step2 and len(self.bag)):
                 break
             number = self.step()
 
         if self.player1.cart.is_empty or not step1:
-            winner = self.player1
-            loser = self.player2
+            self.winner = self.player1.name
+            self.loser = self.player2.name
+        elif self.player2.cart.is_empty or not step2:
+            self.loser = self.player1.name
+            self.winner = self.player2.name
         else:
-            loser = self.player1
-            winner = self.player2
+            print('Все бочонки вынуты')
+            return
 
         print()
-        print("_"*40)
-        print(f"Победитель: {winner.name}")
-        print("_"*40)
-        print(f'{loser.name} сегодня не выиграл')
+        print("_" * 40)
+        print(f"Победитель: {self.winner}")
+        print("_" * 40)
+        print(f'{self.loser} сегодня не выиграл')
         return True
+
+    def __str__(self):
+        s = 'Бочонки в мешке:\n' + ', '.join(str(num) for num in self.bag) + '\n'
+        s += f'Игрок 1:\n{self.player1}\n'
+        s += f'Игрок 2:\n{self.player2}\n'
+        return s
+
+    def __eq__(self, other):
+        if isinstance(other, Game):
+            return self.bag == other.bag and self.player1 == other.player1 and self.player2 == other.player2
+        return False
 
 
 if __name__ == '__main__':

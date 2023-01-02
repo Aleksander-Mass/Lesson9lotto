@@ -32,10 +32,10 @@ class TestCart:
     def test_get_cart_numbers(self):
         assert len(self.cart.get_cart_numbers()) == 15
 
-    def test_is_num_to_cart(self):
+    def test_contains(self):
         numbers = self.cart.get_cart_numbers()
         for number in numbers:
-            assert self.cart.is_num_to_cart(number) == True
+            assert (number in self.cart) == True
 
     def test_cross_out_success(self):
         numbers = self.cart.get_cart_numbers()
@@ -44,8 +44,28 @@ class TestCart:
     def test_cross_out_fail(self):
         assert self.cart.cross_out(1000) == False
 
-    def test_out_print(self):
-        assert self.cart.out_print() != ''
+    def test_str(self):
+        assert str(self.cart) != ''
+
+    def test_eq(self):
+        cart1 = Cart()
+        cart1.cart = [['#', '11', '#', '#', '44', '50', '65', '71', '80', '93'],
+                      ['#', '15', '#', '#', '45', '51', '#', '#', '83', '94'],
+                      ['#', '16', '#', '#', '49', '55', '#', '#', '#', '#']]
+        cart2 = Cart()
+        cart2.cart = [['#', '11', '#', '#', '44', '50', '65', '71', '80', '93'],
+                      ['#', '15', '#', '#', '45', '51', '#', '#', '83', '94'],
+                      ['#', '16', '#', '#', '49', '55', '#', '#', '#', '#']]
+
+        assert cart1 == cart2
+
+    def test_ne(self):
+        cart1 = Cart()
+        cart2 = Cart()
+        assert cart1 != cart2
+
+    def test_ne_other_type(self):
+        assert self.cart != 5
 
 class TestPlayerComp:
     def setup(self):
@@ -64,6 +84,22 @@ class TestPlayerComp:
 
     def test_step_fail(self):
         assert self.playerComp.step(1000) == True
+
+    def test_str(self):
+        assert str(self.playerComp) != ''
+
+    def test_eq(self):
+        otherPlayerComp = PlayerComp()
+        otherPlayerComp.name = self.playerComp.name
+        otherPlayerComp.cart = self.playerComp.cart
+        assert self.playerComp == otherPlayerComp
+
+    def test_ne(self):
+        otherPlayerComp = PlayerComp()
+        assert self.playerComp != otherPlayerComp
+
+    def test_ne_other_type(self):
+        assert self.playerComp != 5
 
 class TestPlayerHuman:
     def setup(self):
@@ -101,6 +137,24 @@ class TestPlayerHuman:
         numbers = self.playerHuman.cart.get_cart_numbers()
         assert self.playerHuman.step(numbers[5]) == False
 
+    def test_str(self):
+        assert str(self.playerHuman) != ''
+
+    def test_eq(self):
+        builtins.input = lambda s: 'Max'
+        otherPlayerHuman = PlayerHuman()
+        otherPlayerHuman.name = self.playerHuman.name
+        otherPlayerHuman.cart = self.playerHuman.cart
+        assert self.playerHuman == otherPlayerHuman
+
+    def test_ne(self):
+        builtins.input = lambda s: 'Alex'
+        otherPlayerHuman = PlayerHuman()
+        assert self.playerHuman != otherPlayerHuman
+
+    def test_ne_other_type(self):
+        assert self.playerHuman != 5
+
 class TestGame:
     def setup(self):
         builtins.input = lambda s: ''
@@ -137,7 +191,6 @@ class TestGame:
         assert isinstance(self.game.player1, PlayerComp) == True
         assert isinstance(self.game.player2, PlayerComp) == True
 
-
     def test_step(self):
         assert self.game.step() > 0
         assert len(self.game.bag) == 99 - 1
@@ -149,3 +202,19 @@ class TestGame:
     def test_exit_game(self):
         builtins.input = lambda s: '4'
         assert self.game.start() == False
+
+    def test_str(self):
+        assert str(self.game) != ''
+
+    def test_eq(self):
+        otherGame = Game()
+        assert self.game == otherGame
+
+    def test_ne(self):
+        otherGame = Game()
+        self.game.init_players(3)
+        otherGame.init_players(3)
+        assert self.game != otherGame
+
+    def test_ne_other_type(self):
+        assert self.game != 5
