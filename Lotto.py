@@ -1,41 +1,22 @@
 from random import sample  # выбор случайного набора
 from collections import defaultdict  # объявление словаря со значениями нужного типа
-
 from faker import Faker  # объявление типа для фиксации случайных имен
-
-
-fake = Faker('ru-RU')  # объект класса с русским набор имен
-
-
-def define_cart(new_cart):
-    """
-    Получает карту, и возвращает множество номеров из нее
-    :param new_cart: карта с номерами
-    :return: множество номеров карты
-    """
-    eq = set()
-    for item in new_cart:
-        eq |= set(item)
-    new_cart = eq - {'#', '-'}
-    return new_cart
-
 
 class Cart:
     """
     класс для карты
     """
     def __init__(self):
-        self.cart = None
-        self.create()
+        self.cart = self.create_cart()
 
-    def create(self):
+    def create_cart(self):
         """
         Задание содержимого карточки 15 уникальных номеров от 1 до 100
         :return: задание свойства cart, как лист из 3 строк
         """
-        self.cart = sorted(sample(list(range(1, 100)), k=15))
+        cart = sorted(sample(list(range(1, 100)), k=15))
         app = defaultdict(list)
-        for item in self.cart:
+        for item in cart:
             app[item // 10].append(item)
         # создает словарь со значениями из трехэлементных листов из заданных цифр, а остальное добавляется символами "#"
         for i in range(10):
@@ -58,7 +39,18 @@ class Cart:
         # превращает из словаря в список по 10 элементов
         for i in range(3):
             result.append([app[key][i] for key in range(10)])
-        self.cart = result
+        return result
+
+    def get_cart_numbers(self):
+        """
+        Возвращает множество номеров карты
+        :return: множество номеров карты
+        """
+        numbers = set()
+        for item in self.cart:
+            numbers |= set(item)
+        numbers = numbers - {'#', '-'}
+        return sorted(numbers)
 
     @property
     def is_empty(self):
@@ -66,7 +58,7 @@ class Cart:
         Проверка на отсутствие цифр в карточке
         :return: bool
         """
-        return len(define_cart(self.cart)) == 0
+        return len(self.get_cart_numbers()) == 0
 
     def is_num_to_cart(self, num):
         """
@@ -83,12 +75,12 @@ class Cart:
         :return: все изменения производятся в картоке
         """
         for item in self.cart:
-            try:
+            if num in item:
                 index = item.index(num)
                 item[index] = '-'
-                break
-            except ValueError:
-                pass
+                return True
+
+        return False
 
     def out_print(self):
         """
@@ -114,7 +106,7 @@ class PlayerComp:
         Инициализируются два свойства карта игрока и его имя - генерируется автоматически
         """
         self.cart = Cart()
-        self.name = fake.name()
+        self.name = Faker('ru-RU').name()
         print(f'Имя игрока: {self.name}')
 
     def step(self, num):
@@ -156,7 +148,6 @@ class PlayerHuman:
             if self.cart.is_num_to_cart(num):
                 return False
             else:
-
                 return True
 
 
@@ -164,12 +155,11 @@ class Game:
     """
     Класс игры, свойство bag - мешок с бочонками
     """
-    bag = list(range(1, 100))
-
     def __init__(self):
         """
         Инициация игроков
         """
+        self.bag = list(range(1, 100))
         self.player1 = None
         self.player2 = None
 
@@ -192,46 +182,57 @@ class Game:
             n = input('Некорректный ввод. Введите номер пункта: ')
         return int(n)
 
-    def start(self):
-        """
-        Процесс игры
-        """
-        n = self.menu()
+    def init_players(self, n):
         if n == 1:
             self.player1 = PlayerHuman()
             self.player2 = PlayerComp()
         elif n == 2:
             self.player1 = PlayerHuman()
             self.player2 = PlayerHuman()
-
         elif n == 3:
             self.player1 = PlayerComp()
             self.player2 = PlayerComp()
+
+
+    def step(self):
+        number = sample(self.bag, k=1)[0]
+        print(f'Выпал бочонок: {number}')
+        self.bag.remove(number)
+        return number
+
+    def start(self):
+        """
+        Процесс игры
+        """
+        n = self.menu()
+        if n in [1, 2, 3]:
+            self.init_players(n)
         else:
             print('Выбран выход')
-            return None
-        num = sample(self.bag, k=1)
-        print(f'Выпал бочонок: {num[0]}')
-        self.bag.remove(num[0])
+            return False
+
+        number = self.step()
+
         while not (self.player1.cart.is_empty or self.player2.cart.is_empty):
-            step1 = self.player1.step(num[0])
-            step2 = self.player2.step(num[0])
+            step1 = self.player1.step(number)
+            step2 = self.player2.step(number)
             if not step1 or not step2:
                 break
-            num = sample(self.bag, k=1)
-            print(f'Выпал бочонок: {num[0]}')
-            self.bag.remove(num[0])
+            number = self.step()
+
         if self.player1.cart.is_empty or not step1:
-            loser = self.player1
-            winner = self.player2
+            winner = self.player1
+            loser = self.player2
         else:
             loser = self.player1
             winner = self.player2
+
         print()
         print("_"*40)
         print(f"Победитель: {winner.name}")
         print("_"*40)
         print(f'{loser.name} сегодня не выиграл')
+        return True
 
 
 if __name__ == '__main__':
